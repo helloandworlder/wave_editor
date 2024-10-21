@@ -34,17 +34,13 @@ class FileScaler {
 
     // 遍历源文件路径列表
     for (String filePath in srcFilePaths) {
-      // 读取CSV文件并转换为List<List<dynamic>>
-      List<List<dynamic>> csvData =
-          CsvToListConverter().convert(File(filePath).readAsStringSync());
-
-      // 解析CSV数据,提取数值列并转换为double类型
-      List<double> data = csvData.map((row) {
-        String valueString = row[1].toString().replaceAll(RegExp(r'[eE]'), 'e');
-        double? value = double.tryParse(valueString);
-        print('Parsed value: $value');
-        return value ?? 0.0;
-      }).toList();
+      // 读取CSV文件
+      final lines = File(filePath).readAsLinesSync();
+      final data = lines
+          .skip(1) // 跳过标题行
+          .map((line) => line.split(','))
+          .map((fields) => double.parse(fields[1]))
+          .toList();
 
       // 如果数据不为空,则计算最大绝对值并添加到maxValues列表中
       if (data.isNotEmpty) {
@@ -66,36 +62,32 @@ class FileScaler {
       // 构建目标文件路径
       String dstFilePath = path.join(dstFolder, path.basename(srcFilePath));
 
-      // 读取CSV文件并转换为List<List<dynamic>>
-      List<List<dynamic>> csvData =
-          CsvToListConverter().convert(File(srcFilePath).readAsStringSync());
-
-      // 解析CSV数据,提取数值列并转换为double类型
-      List<double> data = csvData.map((row) {
-        String valueString = row[1].toString().replaceAll(RegExp(r'[eE]'), 'e');
-        double? value = double.tryParse(valueString);
-        return value ?? 0.0;
-      }).toList();
+      // 读取CSV文件
+      final lines = File(srcFilePath).readAsLinesSync();
+      final data = lines
+          .skip(1) // 跳过标题行
+          .map((line) => line.split(','))
+          .map((fields) => double.parse(fields[1]))
+          .toList();
 
       // 如果数据不为空且对应的最大值不为0,则对数据进行缩放处理
       if (data.isNotEmpty && maxValues[i] != 0) {
-        data = data.map((value) => value * scaleFlex).toList();
+        final scaledData = data.map((value) => value * scaleFlex).toList();
+
+        // 将缩放后的数据与时间列组合成CSV格式字符串
+        String csvString = lines[0] +
+            '\n' + // 添加标题行
+            scaledData
+                .asMap()
+                .entries
+                .map((entry) => '${entry.key * 0.01},${entry.value}')
+                .join('\n');
+
+        // 创建目标文件夹(如果不存在)
+        Directory(path.dirname(dstFilePath)).createSync(recursive: true);
+        // 将CSV字符串写入目标文件
+        File(dstFilePath).writeAsStringSync(csvString);
       }
-
-      // 将缩放后的数据转换为CSV格式字符串
-      String csvString = ListToCsvConverter().convert([
-        ['time', 'data'],
-        ...data
-            .asMap()
-            .entries
-            .map((entry) => [entry.key, entry.value])
-            .toList(),
-      ]);
-
-      // 创建目标文件夹(如果不存在)
-      Directory(path.dirname(dstFilePath)).createSync(recursive: true);
-      // 将CSV字符串写入目标文件
-      File(dstFilePath).writeAsStringSync(csvString);
     }
   }
 }

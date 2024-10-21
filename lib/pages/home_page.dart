@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wave_editor/logic/app_controller.dart';
+import 'package:wave_editor/pages/preview_waveform.dart';
 import 'package:wave_editor/pages/settings_page.dart';
 import 'package:wave_editor/pages/http_server.dart';
 import 'package:wave_editor/pages/rename_file.dart';
-import 'package:wave_editor/pages/file_scale.dart'; // 添加这一行
+import 'package:wave_editor/pages/file_scale.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,8 +19,9 @@ class _HomePageState extends State<HomePage> {
 
   final List<Widget> _pages = [
     RenameFilePage(),
+    FileScalePage(),
+    PreviewWaveformPage(),
     HttpServerPage(),
-    FileScalePage(), // 添加这一行
     SettingsPage(),
   ];
 
@@ -33,35 +35,45 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('主页'),
+        title: Text('Wave Editor'),
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.drive_file_rename_outline),
-            label: '重命名',
+      body: Row(
+        children: [
+          NavigationRail(
+            selectedIndex: _selectedIndex,
+            onDestinationSelected: _onItemTapped,
+            labelType: NavigationRailLabelType.selected,
+            destinations: const [
+              NavigationRailDestination(
+                icon: Icon(Icons.drive_file_rename_outline),
+                label: Text('重命名'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.scale),
+                label: Text('文件缩放'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.preview),
+                label: Text('预览波形'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.http),
+                label: Text('HTTP Server'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.settings),
+                label: Text('设置'),
+              ),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.http),
-            label: 'HTTP Server',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.scale), // 添加这一行
-            label: '文件缩放', // 添加这一行
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: '设置',
+          const VerticalDivider(thickness: 1, width: 1),
+          Expanded(
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: _pages,
+            ),
           ),
         ],
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
       ),
     );
   }

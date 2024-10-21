@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:wave_editor/io/file_picker_service.dart';
 import 'dart:io'; // 添加此行以导入 File 类
 import 'package:path/path.dart' as path;
+import 'package:csv/csv.dart';
 
 class AppController extends GetxController {
   final FilePickerService _filePickerService = FilePickerService();
@@ -103,32 +104,28 @@ class FileProcessor {
   }
 
   Future<Map<String, List<double>>> _readFile(File file) async {
-    final lines = await file.readAsLines();
-    final dataLine = lines.firstWhere((line) => line.startsWith('NPTS='));
-    final dtValue =
-        dataLine.split(',')[1].trim().split('=')[1].trim().split(' SEC')[0];
-    final dt = double.parse(dtValue);
+    final csvString = await file.readAsString();
+    final csvList = const CsvToListConverter().convert(csvString);
 
-    final data = <double>[];
-    for (var line in lines.skip(4)) {
-      for (var value in line.split(' ')) {
-        if (value.startsWith('.') || value.startsWith('-')) {
-          data.add(double.parse(value));
-        }
-      }
-    }
+    final time =
+        csvList.skip(1).map((row) => double.parse(row[0] as String)).toList();
+    final data =
+        csvList.skip(1).map((row) => double.parse(row[1] as String)).toList();
 
-    final time = List.generate(data.length, (index) => index * dt);
     return {'time': time, 'data': data};
   }
 
   Future<void> _saveFile(Map<String, List<double>> data, String path) async {
-    final lines = <String>[];
-    lines.add('time,data');
-    for (var i = 0; i < data['time']!.length; i++) {
-      lines.add('${data['time']![i]},${data['data']![i]}');
-    }
-    await File(path).writeAsString(lines.join('\n'));
+    final csvList = [
+      ['time', 'data'],
+      ...data['time']!
+          .asMap()
+          .entries
+          .map((entry) => [entry.value, data['data']![entry.key]]),
+    ];
+
+    final csvString = const ListToCsvConverter().convert(csvList);
+    await File(path).writeAsString(csvString);
   }
 
   double _getMaxAbsValue(List<double> data) {
