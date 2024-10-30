@@ -1,10 +1,15 @@
 import 'dart:io';
-import 'package:csv/csv.dart';
+import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
+import 'package:get/get.dart';
+import 'package:wave_editor/logic/logic.dart';
 
 class FileScaler {
   void processFileScale(String srcFolder, String dstFolder, double targetValue,
       List<String> suffixes, List<String> prefixList) {
+    final appController = Get.find<AppController>();
+    suffixes = appController.defaultFileSuffixes;
+
     // 遍历后缀列表
     for (String suffix in suffixes) {
       // 遍历前缀列表
@@ -46,7 +51,7 @@ class FileScaler {
       if (data.isNotEmpty) {
         double maxValue =
             data.reduce((a, b) => a.abs() > b.abs() ? a : b).abs();
-        print('$filePath 极大绝对值 $maxValue');
+        debugPrint('$filePath 极大绝对值 $maxValue');
         maxValues.add(maxValue);
       } else {
         maxValues.add(0);
@@ -75,13 +80,8 @@ class FileScaler {
         final scaledData = data.map((value) => value * scaleFlex).toList();
 
         // 将缩放后的数据与时间列组合成CSV格式字符串
-        String csvString = lines[0] +
-            '\n' + // 添加标题行
-            scaledData
-                .asMap()
-                .entries
-                .map((entry) => '${entry.key * 0.01},${entry.value}')
-                .join('\n');
+        String csvString =
+            '${lines[0]}\n${scaledData.asMap().entries.map((entry) => '${entry.key * 0.01},${entry.value}').join('\n')}';
 
         // 创建目标文件夹(如果不存在)
         Directory(path.dirname(dstFilePath)).createSync(recursive: true);

@@ -1,39 +1,27 @@
+import 'dart:io';
 import 'package:get/get.dart';
-import 'package:wave_editor/io/file_picker_service.dart';
-import 'dart:io'; // 添加此行以导入 File 类
 import 'package:path/path.dart' as path;
 import 'package:csv/csv.dart';
+import 'package:wave_editor/logic/logic.dart';
 
-class AppController extends GetxController {
-  final FilePickerService _filePickerService = FilePickerService();
+class FileRenamer {
+  final String srcFolder;
+  final String dstFolder;
+  late List<String> suffixes;
+  late List<String> separators;
 
-  // 设置
-  final setting1 = false.obs;
-  // 其他设置...
-
-  // 选择文件夹
-  Future<void> pickFolder() async {
-    String? directory = await _filePickerService.pickDirectory();
-    if (directory != null) {
-      // 处理选择的文件夹
-      print('选择的文件夹: $directory');
-    }
+  FileRenamer({
+    required this.srcFolder,
+    required this.dstFolder,
+  }) {
+    final appController = Get.find<AppController>();
+    suffixes = appController.defaultWaveDirection.toList();
+    separators = appController.defaultSeparator.toList();
   }
 
-  // 选择文件
-  Future<void> pickFiles() async {
-    List<File>? files = await _filePickerService.pickFiles();
-    if (files != null) {
-      // 处理选择的文件
-      print('选择的文件: ${files.map((f) => f.path).toList()}');
-    }
-  }
-
-  Future<void> processFileName(
-    String srcFolder,
-    String dstFolder,
-  ) async {
-    final fileProcessor = FileProcessor(srcFolder, dstFolder);
+  Future<void> processFiles() async {
+    final fileProcessor =
+        FileProcessor(srcFolder, dstFolder, suffixes, separators);
     await fileProcessor.process();
   }
 }
@@ -41,8 +29,10 @@ class AppController extends GetxController {
 class FileProcessor {
   final String srcFolder;
   final String dstFolder;
+  final List<String> suffixes;
+  final List<String> separators;
 
-  FileProcessor(this.srcFolder, this.dstFolder);
+  FileProcessor(this.srcFolder, this.dstFolder, this.suffixes, this.separators);
 
   Future<void> process() async {
     final files = await _getFiles();
@@ -61,7 +51,6 @@ class FileProcessor {
       fileData.sort((a, b) => _getMaxAbsValue(b['data']['data'] as List<double>)
           .compareTo(_getMaxAbsValue(a['data']['data'] as List<double>)));
 
-      final suffixes = ['H', 'HH', 'V'];
       for (var i = 0; i < suffixes.length; i++) {
         if (i < fileData.length) {
           final file = fileData[i]['file'] as File;
@@ -99,7 +88,7 @@ class FileProcessor {
 
   String _getPrefix(File file) {
     final fileName = path.basename(file.path);
-    final parts = fileName.split(RegExp(r'[-_]'));
+    final parts = fileName.split(RegExp('[${separators.join('')}]'));
     return parts.sublist(0, parts.length - 1).join('-');
   }
 

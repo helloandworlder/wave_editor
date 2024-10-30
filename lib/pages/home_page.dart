@@ -1,27 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:wave_editor/logic/app_controller.dart';
-import 'package:wave_editor/pages/preview_waveform.dart';
+import 'package:wave_editor/logic/logic.dart';
+import 'package:wave_editor/pages/preview_wave_page.dart';
 import 'package:wave_editor/pages/settings_page.dart';
-import 'package:wave_editor/pages/http_server.dart';
-import 'package:wave_editor/pages/rename_file.dart';
-import 'package:wave_editor/pages/file_scale.dart';
+import 'package:wave_editor/pages/http_server_page.dart';
+import 'package:wave_editor/pages/file_rename_page.dart';
+import 'package:wave_editor/pages/file_scale_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
   @override
-  _HomePageState createState() => _HomePageState();
+  HomePageState createState() => HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class HomePageState extends State<HomePage> {
   final AppController appController = Get.find<AppController>();
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    RenameFilePage(),
-    FileScalePage(),
-    PreviewWaveformPage(),
-    HttpServerPage(),
+    const RenameFilePage(),
+    const FileScalePage(),
+    const PreviewWaveformPage(),
+    const HttpServerPage(),
     SettingsPage(),
   ];
 

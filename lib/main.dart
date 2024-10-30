@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wave_editor/pages/home_page.dart';
 import 'package:wave_editor/pages/settings_page.dart';
-import 'package:wave_editor/pages/http_server.dart';
-import 'package:wave_editor/logic/app_controller.dart';
+import 'package:wave_editor/pages/http_server_page.dart';
+import 'package:wave_editor/logic/logic.dart';
 
 void main() {
   Get.put(AppController()); // 在这里注入 AppController
@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       getPages: [
-        GetPage(name: '/', page: () => HomePage()),
+        GetPage(name: '/', page: () => const HomePage()),
         GetPage(name: '/settings', page: () => SettingsPage()),
         GetPage(name: '/httpServer', page: () => HttpServerPage()),
       ],
