@@ -10,13 +10,15 @@ class FileProcessor {
   late final String waveDirectionSeparator; // '-'
   late final bool useIncrementalNaming; // false
   late final List<String> fileExtension; // ['H', 'HH', 'V']
+  late final List<String> separator; // ['-', '_']
 
   FileProcessor(this.srcFolder, this.dstFolder) {
     final appController = Get.find<AppController>();
     waveDirection = appController.defaultWaveDirection.toList();
     waveDirectionSeparator = appController.defaultWaveDirectionSeparator.value;
     useIncrementalNaming = appController.useIncrementalNaming.value;
-    fileExtension = appController.defaultFileExtension;
+    fileExtension = appController.defaultFileExtension.toList();
+    separator = appController.defaultSeparator.toList();
   }
 
   Future<void> process() async {
@@ -74,9 +76,19 @@ class FileProcessor {
   }
 
   String _getPrefix(File file) {
-    final fileName = path.basename(file.path);
-    // 直接获取 RSN26_HOLLISTR_B 作为前缀
-    return fileName.split('-')[0];
+      final fileName = path.basename(file.path);
+      // 遍历所有可能的分隔符
+      for (var sep in separator) {
+        final parts = fileName.split(sep);
+        if (parts.length > 1) {
+          // 如果能够成功分割，返回第一部分作为前缀
+          return parts[0];
+      }
+    }
+
+    throw FormatException(
+          '无法从文件名 "$fileName" 中提取前缀。请检查全局分隔符是否正确: ${separator.join("|")}');
+    }
   }
 
   Future<Map<String, List<double>>> _readFile(File file) async {
