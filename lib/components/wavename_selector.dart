@@ -14,6 +14,7 @@ class WaveformPrefixSelector extends StatelessWidget {
   final RxMap<String, List<String>> prefixMap = <String, List<String>>{}.obs;
 
   WaveformPrefixSelector({
+    super.key,
     required this.srcFolderPath,
     required this.selectedWaveName,
     this.multiSelect = false,
@@ -26,7 +27,7 @@ class WaveformPrefixSelector extends StatelessWidget {
 
       // 检查目录是否存在
       if (!directory.existsSync()) {
-        print('目录不存在: ${srcFolderPath.value}');
+        debugPrint('目录不存在: ${srcFolderPath.value}');
         return;
       }
 
@@ -69,16 +70,16 @@ class WaveformPrefixSelector extends StatelessWidget {
           children: [
             Expanded(
               child: Obx(
-                () => Text('选择波形名称: ${selectedWaveName.join(" |")}'),
+                () => Text('选择波形名称: ${selectedWaveName.join(" | ")}'),
               ),
             ),
             ElevatedButton(
               onPressed: _refreshPrefixList,
-              child: Text('扫描'),
+              child: const Text('扫描'),
             ),
           ],
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Obx(
           () => Wrap(
             spacing: 8,
@@ -89,12 +90,17 @@ class WaveformPrefixSelector extends StatelessWidget {
                   selected: selectedWaveName.contains(prefix),
                   onSelected: (selected) {
                     if (selected) {
-                      if (!multiSelect)
+                      if (!multiSelect) {
                         selectedWaveName.assignAll([prefix]);
-                      else
+                      } else {
                         selectedWaveName.add(prefix);
+                      }
                     } else {
-                      selectedWaveName.remove(prefix);
+                      if (!multiSelect) {
+                        selectedWaveName.assignAll([]);
+                      } else {
+                        selectedWaveName.remove(prefix);
+                      }
                     }
                   },
                 ),

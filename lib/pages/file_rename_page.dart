@@ -17,7 +17,7 @@ class RenameFilePageState extends State<RenameFilePage> {
   @override
   void initState() {
     super.initState();
-    targetFileSuffix.assignAll(appController.defaultFileSuffixes);
+    targetFileSuffix.assignAll(appController.defaultFileExtension);
   }
 
   Future<void> _selectSrcFolder() async {
@@ -67,7 +67,7 @@ class RenameFilePageState extends State<RenameFilePage> {
               const Text('选择后缀(可多选)'),
               Obx(() => Wrap(
                     spacing: 8.0,
-                    children: appController.defaultFileSuffixes.map((suffix) {
+                    children: appController.defaultFileExtension.map((suffix) {
                       return ChoiceChip(
                         label: Text(suffix),
                         selected: targetFileSuffix.contains(suffix),
@@ -112,10 +112,10 @@ class RenameFilePageState extends State<RenameFilePage> {
                     }
                     // 捕获异常
                     try {
-                      FileRenamer(
-                        srcFolder: appController.renameInputFolder.value,
-                        dstFolder: appController.renameOutputFolder.value,
-                      ).processFiles();
+                      FileProcessor(
+                        appController.renameInputFolder.value,
+                        appController.renameOutputFolder.value,
+                      ).process();
                     } catch (e) {
                       Get.snackbar('重命名/格式化错误', e.toString());
                     }

@@ -73,7 +73,11 @@ class PreviewWaveformPageState extends State<PreviewWaveformPage> {
           if (fileName.startsWith(waveName) &&
               fileName.endsWith('.$selectedSuffix')) {
             for (String waveDirection in waveDirections) {
-              if (waveDirection == fileName.split('-')[1].split('.')[0]) {
+              String fileNameWithoutSuffix = fileName.split('.').first;
+              String direction = fileNameWithoutSuffix
+                  .split(appController.defaultWaveDirectionSeparator.value)
+                  .last;
+              if (waveDirection == direction) {
                 List<List<dynamic>> csvData =
                     CsvToListConverter().convert(entity.readAsStringSync());
                 List<WaveformData> data = [];
@@ -215,7 +219,7 @@ class PreviewWaveformPageState extends State<PreviewWaveformPage> {
             const Text('选择文件后缀:'),
             Obx(() => Wrap(
                   spacing: 8.0,
-                  children: appController.defaultFileSuffixes.map((suffix) {
+                  children: appController.defaultFileExtension.map((suffix) {
                     return ChoiceChip(
                       label: Text(suffix),
                       selected: _selectedSuffix.value == suffix,

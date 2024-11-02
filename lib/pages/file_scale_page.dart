@@ -22,7 +22,7 @@ class FileScalePageState extends State<FileScalePage> {
   @override
   void initState() {
     super.initState();
-    _targetFileSuffix.assignAll(appController.defaultFileSuffixes);
+    _targetFileSuffix.assignAll(appController.defaultFileExtension);
   }
 
   Future<void> _selectSrcFolder() async {
@@ -62,7 +62,7 @@ class FileScalePageState extends State<FileScalePage> {
       double targetValue = double.parse(_targetValueController.text);
       List<String> prefix =
           _selectedWaveName.isNotEmpty ? _selectedWaveName.toList() : [];
-      List<String> suffixes = appController.defaultFileSuffixes;
+      List<String> suffixes = appController.defaultFileExtension;
 
       FileScaler fileScaler = FileScaler();
       fileScaler.processFileScale(
@@ -120,7 +120,7 @@ class FileScalePageState extends State<FileScalePage> {
             const Text('选择文件后缀:'),
             Obx(() => Wrap(
                   spacing: 8.0,
-                  children: appController.defaultFileSuffixes.map((suffix) {
+                  children: appController.defaultFileExtension.map((suffix) {
                     return ChoiceChip(
                       label: Text(suffix),
                       selected: _targetFileSuffix.contains(suffix),

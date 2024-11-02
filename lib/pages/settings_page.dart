@@ -17,7 +17,7 @@ class SettingsPage extends StatelessWidget {
         children: [
           _buildSuffixesSetting(
             title: '全局文件后缀',
-            suffixes: appController.defaultFileSuffixes,
+            suffixes: appController.defaultFileExtension,
           ),
           _buildSuffixesSetting(
             title: '全局波形方向',
@@ -28,6 +28,41 @@ class SettingsPage extends StatelessWidget {
             suffixes: appController.defaultSeparator,
           ),
           _buildWaveDirectionColorSetting(appController),
+          ListTile(
+            title: const Text('默认文件命名方式'),
+            subtitle: const Text('选择是否使用自增数字(1,2,3...)命名文件'),
+            trailing: Obx(() => Switch(
+                  value: appController.useIncrementalNaming.value,
+                  onChanged: (value) {
+                    appController.useIncrementalNaming.value = value;
+                  },
+                )),
+          ),
+          ListTile(
+            title: const Text('默认波形方向分隔符'),
+            subtitle: const Text('设置波形方向识别符'),
+            trailing: SizedBox(
+              width: 80,
+              child: Obx(() => TextField(
+                    textAlign: TextAlign.center,
+                    controller: TextEditingController(
+                      text: appController.defaultWaveDirectionSeparator.value,
+                    ),
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (value) {
+                      if (value.isNotEmpty) {
+                        appController.defaultWaveDirectionSeparator.value =
+                            value;
+                      }
+                    },
+                  )),
+            ),
+          ),
         ],
       ),
     );

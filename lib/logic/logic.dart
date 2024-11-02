@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class AppController extends GetxController {
-  final RxList<String> defaultFileSuffixes = <String>['AT2', 'VT2', 'DT2'].obs;
+  final RxList<String> defaultFileExtension = <String>['AT2', 'VT2', 'DT2'].obs;
   final RxList<String> defaultWaveDirection = <String>['H', 'HH', 'V'].obs;
   final RxList<String> defaultSeparator = <String>['-', '_'].obs;
+  final RxString defaultWaveDirectionSeparator = '-'.obs;
+  final RxBool useIncrementalNaming = false.obs;
 
   final RxString renameInputFolder = ''.obs;
   final RxString renameOutputFolder = ''.obs;

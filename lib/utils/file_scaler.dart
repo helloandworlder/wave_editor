@@ -8,7 +8,7 @@ class FileScaler {
   void processFileScale(String srcFolder, String dstFolder, double targetValue,
       List<String> suffixes, List<String> prefixList) {
     final appController = Get.find<AppController>();
-    suffixes = appController.defaultFileSuffixes;
+    suffixes = appController.defaultFileExtension;
 
     // 遍历后缀列表
     for (String suffix in suffixes) {

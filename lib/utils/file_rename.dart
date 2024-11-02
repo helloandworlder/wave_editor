@@ -1,38 +1,23 @@
 import 'dart:io';
 import 'package:get/get.dart';
 import 'package:path/path.dart' as path;
-import 'package:csv/csv.dart';
 import 'package:wave_editor/logic/logic.dart';
-
-class FileRenamer {
-  final String srcFolder;
-  final String dstFolder;
-  late List<String> suffixes;
-  late List<String> separators;
-
-  FileRenamer({
-    required this.srcFolder,
-    required this.dstFolder,
-  }) {
-    final appController = Get.find<AppController>();
-    suffixes = appController.defaultWaveDirection.toList();
-    separators = appController.defaultSeparator.toList();
-  }
-
-  Future<void> processFiles() async {
-    final fileProcessor =
-        FileProcessor(srcFolder, dstFolder, suffixes, separators);
-    await fileProcessor.process();
-  }
-}
 
 class FileProcessor {
   final String srcFolder;
   final String dstFolder;
-  final List<String> suffixes;
-  final List<String> separators;
+  late final List<String> waveDirection; // ['H', 'HH', 'V']
+  late final String waveDirectionSeparator; // '-'
+  late final bool useIncrementalNaming; // false
+  late final List<String> fileExtension; // ['H', 'HH', 'V']
 
-  FileProcessor(this.srcFolder, this.dstFolder, this.suffixes, this.separators);
+  FileProcessor(this.srcFolder, this.dstFolder) {
+    final appController = Get.find<AppController>();
+    waveDirection = appController.defaultWaveDirection.toList();
+    waveDirectionSeparator = appController.defaultWaveDirectionSeparator.value;
+    useIncrementalNaming = appController.useIncrementalNaming.value;
+    fileExtension = appController.defaultFileExtension;
+  }
 
   Future<void> process() async {
     final files = await _getFiles();
@@ -51,13 +36,15 @@ class FileProcessor {
       fileData.sort((a, b) => _getMaxAbsValue(b['data']['data'] as List<double>)
           .compareTo(_getMaxAbsValue(a['data']['data'] as List<double>)));
 
+      final suffixes = waveDirection;
       for (var i = 0; i < suffixes.length; i++) {
         if (i < fileData.length) {
           final file = fileData[i]['file'] as File;
           final data = fileData[i]['data'] as Map<String, List<double>>;
           final suffix = suffixes[i];
           final fileExtension = path.extension(file.path);
-          final newName = '${_getPrefix(file)}_$suffix$fileExtension';
+          final newName =
+              '${_getPrefix(file)}$waveDirectionSeparator$suffix$fileExtension';
           final newPath = path.join(dstFolder, newName);
           await _saveFile(data, newPath);
         }
@@ -74,47 +61,51 @@ class FileProcessor {
 
   Map<String, List<File>> _groupFiles(List<File> files) {
     final groups = <String, List<File>>{};
+
     for (var file in files) {
       final prefix = _getPrefix(file);
-      final extension = path.extension(file.path);
-      final key = '$prefix$extension';
-      if (!groups.containsKey(key)) {
-        groups[key] = [];
+
+      if (!groups.containsKey(prefix)) {
+        groups[prefix] = [];
       }
-      groups[key]!.add(file);
+      groups[prefix]!.add(file);
     }
     return groups;
   }
 
   String _getPrefix(File file) {
     final fileName = path.basename(file.path);
-    final parts = fileName.split(RegExp('[${separators.join('')}]'));
-    return parts.sublist(0, parts.length - 1).join('-');
+    // 直接获取 RSN26_HOLLISTR_B 作为前缀
+    return fileName.split('-')[0];
   }
 
   Future<Map<String, List<double>>> _readFile(File file) async {
-    final csvString = await file.readAsString();
-    final csvList = const CsvToListConverter().convert(csvString);
+    final lines = await file.readAsLines();
+    final dataLine = lines.firstWhere((line) => line.startsWith('NPTS='));
+    final dtValue =
+        dataLine.split(',')[1].trim().split('=')[1].trim().split(' SEC')[0];
+    final dt = double.parse(dtValue);
 
-    final time =
-        csvList.skip(1).map((row) => double.parse(row[0] as String)).toList();
-    final data =
-        csvList.skip(1).map((row) => double.parse(row[1] as String)).toList();
+    final data = <double>[];
+    for (var line in lines.skip(4)) {
+      for (var value in line.split(' ')) {
+        if (value.startsWith('.') || value.startsWith('-')) {
+          data.add(double.parse(value));
+        }
+      }
+    }
 
+    final time = List.generate(data.length, (index) => index * dt);
     return {'time': time, 'data': data};
   }
 
   Future<void> _saveFile(Map<String, List<double>> data, String path) async {
-    final csvList = [
-      ['time', 'data'],
-      ...data['time']!
-          .asMap()
-          .entries
-          .map((entry) => [entry.value, data['data']![entry.key]]),
-    ];
-
-    final csvString = const ListToCsvConverter().convert(csvList);
-    await File(path).writeAsString(csvString);
+    final lines = <String>[];
+    lines.add('time,data');
+    for (var i = 0; i < data['time']!.length; i++) {
+      lines.add('${data['time']![i]},${data['data']![i]}');
+    }
+    await File(path).writeAsString(lines.join('\n'));
   }
 
   double _getMaxAbsValue(List<double> data) {
