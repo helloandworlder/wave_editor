@@ -4,16 +4,13 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:wave_editor/logic/logic.dart';
 
-class WaveformPrefixSelector extends StatelessWidget {
+class WaveformPrefixSelector extends StatefulWidget {
   final RxString srcFolderPath;
   final RxList<String> selectedWaveName;
   final bool multiSelect;
   final bool defaultSelectAll;
 
-  // 将 prefixMap 定义为类的属性
-  final RxMap<String, List<String>> prefixMap = <String, List<String>>{}.obs;
-
-  WaveformPrefixSelector({
+  const WaveformPrefixSelector({
     super.key,
     required this.srcFolderPath,
     required this.selectedWaveName,
@@ -21,13 +18,26 @@ class WaveformPrefixSelector extends StatelessWidget {
     this.defaultSelectAll = false,
   });
 
-  void _refreshPrefixList() {
-    if (srcFolderPath.value.isNotEmpty) {
-      final directory = Directory(srcFolderPath.value);
+  @override
+  State<WaveformPrefixSelector> createState() => _WaveformPrefixSelectorState();
+}
 
-      // 检查目录是否存在
+class _WaveformPrefixSelectorState extends State<WaveformPrefixSelector> {
+  final RxMap<String, List<String>> prefixMap = <String, List<String>>{}.obs;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshPrefixList();
+    ever(widget.srcFolderPath, (_) => _refreshPrefixList());
+  }
+
+  void _refreshPrefixList() {
+    if (widget.srcFolderPath.value.isNotEmpty) {
+      final directory = Directory(widget.srcFolderPath.value);
+
       if (!directory.existsSync()) {
-        debugPrint('目录不存在: ${srcFolderPath.value}');
+        debugPrint('目录不存在: ${widget.srcFolderPath.value}');
         return;
       }
 
@@ -35,7 +45,6 @@ class WaveformPrefixSelector extends StatelessWidget {
       final appController = Get.find<AppController>();
       final separators = appController.defaultSeparator;
 
-      // 提取所有文件名的前缀部分
       final newPrefixMap = <String, List<String>>{};
       for (final file in files) {
         final fileName = path.basename(file.path);
@@ -54,10 +63,10 @@ class WaveformPrefixSelector extends StatelessWidget {
         }
       }
 
-      // 找出具有相同前缀的文件组成的前缀
       final prefixes = newPrefixMap.keys.toList();
-      prefixMap.assignAll(newPrefixMap); // 更新 prefixMap
-      selectedWaveName.assignAll(defaultSelectAll ? prefixes : []);
+      prefixMap.assignAll(newPrefixMap);
+      widget.selectedWaveName
+          .assignAll(widget.defaultSelectAll ? prefixes : []);
     }
   }
 
@@ -70,7 +79,7 @@ class WaveformPrefixSelector extends StatelessWidget {
           children: [
             Expanded(
               child: Obx(
-                () => Text('选择波形名称: ${selectedWaveName.join(" | ")}'),
+                () => Text('选择波形名称: ${widget.selectedWaveName.join(" | ")}'),
               ),
             ),
             ElevatedButton(
@@ -84,22 +93,22 @@ class WaveformPrefixSelector extends StatelessWidget {
           () => Wrap(
             spacing: 8,
             children: [
-              for (final prefix in prefixMap.keys) // 使用 prefixMap 的键
+              for (final prefix in prefixMap.keys)
                 ChoiceChip(
                   label: Text(prefix),
-                  selected: selectedWaveName.contains(prefix),
+                  selected: widget.selectedWaveName.contains(prefix),
                   onSelected: (selected) {
                     if (selected) {
-                      if (!multiSelect) {
-                        selectedWaveName.assignAll([prefix]);
+                      if (!widget.multiSelect) {
+                        widget.selectedWaveName.assignAll([prefix]);
                       } else {
-                        selectedWaveName.add(prefix);
+                        widget.selectedWaveName.add(prefix);
                       }
                     } else {
-                      if (!multiSelect) {
-                        selectedWaveName.assignAll([]);
+                      if (!widget.multiSelect) {
+                        widget.selectedWaveName.assignAll([]);
                       } else {
-                        selectedWaveName.remove(prefix);
+                        widget.selectedWaveName.remove(prefix);
                       }
                     }
                   },

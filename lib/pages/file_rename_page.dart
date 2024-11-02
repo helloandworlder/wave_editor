@@ -4,13 +4,13 @@ import 'package:wave_editor/logic/logic.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:wave_editor/utils/file_rename.dart';
 
-class RenameFilePage extends StatefulWidget {
-  const RenameFilePage({super.key});
+class FileRenamePage extends StatefulWidget {
+  const FileRenamePage({super.key});
   @override
-  RenameFilePageState createState() => RenameFilePageState();
+  FileRenamePageState createState() => FileRenamePageState();
 }
 
-class RenameFilePageState extends State<RenameFilePage> {
+class FileRenamePageState extends State<FileRenamePage> {
   final AppController appController = Get.find();
   List<String> targetFileSuffix = <String>[];
 
@@ -115,6 +115,7 @@ class RenameFilePageState extends State<RenameFilePage> {
                       FileProcessor(
                         appController.renameInputFolder.value,
                         appController.renameOutputFolder.value,
+                        fileExtension: targetFileSuffix,
                       ).process();
                     } catch (e) {
                       Get.snackbar('重命名/格式化错误', e.toString());

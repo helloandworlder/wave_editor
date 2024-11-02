@@ -4,11 +4,12 @@ import 'package:get/get.dart';
 import 'package:wave_editor/logic/logic.dart';
 
 class SettingsPage extends StatelessWidget {
-  SettingsPage({super.key});
-  final AppController appController = Get.find();
+  const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final AppController appController = Get.find();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('设置'),
@@ -29,8 +30,9 @@ class SettingsPage extends StatelessWidget {
           ),
           _buildWaveDirectionColorSetting(appController),
           ListTile(
-            title: const Text('默认文件命名方式'),
-            subtitle: const Text('选择是否使用自增数字(1,2,3...)命名文件'),
+            title: Obx(() => Text(
+                '文件命名方式: ${appController.useIncrementalNaming.value ? '自增数字' : '原文件前缀'}')),
+            subtitle: const Text('选择使用自增数字(1,2,3...)或使用原文件前缀命名文件'),
             trailing: Obx(() => Switch(
                   value: appController.useIncrementalNaming.value,
                   onChanged: (value) {

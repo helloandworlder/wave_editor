@@ -9,13 +9,13 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:path/path.dart' as path;
 import 'package:wave_editor/components/wavename_selector.dart';
 
-class PreviewWaveformPage extends StatefulWidget {
-  const PreviewWaveformPage({super.key});
+class WaveformPreviewPage extends StatefulWidget {
+  const WaveformPreviewPage({super.key});
   @override
-  PreviewWaveformPageState createState() => PreviewWaveformPageState();
+  WaveformPreviewPageState createState() => WaveformPreviewPageState();
 }
 
-class PreviewWaveformPageState extends State<PreviewWaveformPage> {
+class WaveformPreviewPageState extends State<WaveformPreviewPage> {
   final AppController appController = Get.find();
 
   final RxList<String> _selectedWaveName = <String>[].obs;
@@ -73,13 +73,10 @@ class PreviewWaveformPageState extends State<PreviewWaveformPage> {
           if (fileName.startsWith(waveName) &&
               fileName.endsWith('.$selectedSuffix')) {
             for (String waveDirection in waveDirections) {
-              String fileNameWithoutSuffix = fileName.split('.').first;
-              String direction = fileNameWithoutSuffix
-                  .split(appController.defaultWaveDirectionSeparator.value)
-                  .last;
-              if (waveDirection == direction) {
-                List<List<dynamic>> csvData =
-                    CsvToListConverter().convert(entity.readAsStringSync());
+              if (waveDirection == fileName.split('-')[1].split('.')[0]) {
+                List<List<dynamic>> csvData = const CsvToListConverter(
+                        eol: '\n', shouldParseNumbers: true)
+                    .convert(entity.readAsStringSync());
                 List<WaveformData> data = [];
                 for (int i = 1; i < csvData.length; i++) {
                   data.add(WaveformData(csvData[i][0], csvData[i][1]));

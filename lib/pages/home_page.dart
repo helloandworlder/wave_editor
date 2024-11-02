@@ -6,6 +6,7 @@ import 'package:wave_editor/pages/settings_page.dart';
 import 'package:wave_editor/pages/http_server_page.dart';
 import 'package:wave_editor/pages/file_rename_page.dart';
 import 'package:wave_editor/pages/file_scale_page.dart';
+import 'package:wave_editor/pages/about_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,11 +19,12 @@ class HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    const RenameFilePage(),
+    const FileRenamePage(),
     const FileScalePage(),
-    const PreviewWaveformPage(),
+    const WaveformPreviewPage(),
     const HttpServerPage(),
-    SettingsPage(),
+    const SettingsPage(),
+    const AboutPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -35,7 +37,7 @@ class HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Wave Editor'),
+        title: const Text('地震波处理工具'),
       ),
       body: Row(
         children: [
@@ -63,6 +65,10 @@ class HomePageState extends State<HomePage> {
               NavigationRailDestination(
                 icon: Icon(Icons.settings),
                 label: Text('设置'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.info),
+                label: Text('关于'),
               ),
             ],
           ),

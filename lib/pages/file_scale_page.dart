@@ -62,7 +62,7 @@ class FileScalePageState extends State<FileScalePage> {
       double targetValue = double.parse(_targetValueController.text);
       List<String> prefix =
           _selectedWaveName.isNotEmpty ? _selectedWaveName.toList() : [];
-      List<String> suffixes = appController.defaultFileExtension;
+      List<String> suffixes = _targetFileSuffix.toList();
 
       FileScaler fileScaler = FileScaler();
       fileScaler.processFileScale(

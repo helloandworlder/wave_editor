@@ -2,7 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:wave_editor/pages/about_page.dart';
+import 'package:wave_editor/pages/file_rename_page.dart';
+import 'package:wave_editor/pages/file_scale_page.dart';
 import 'package:wave_editor/pages/home_page.dart';
+import 'package:wave_editor/pages/preview_wave_page.dart';
 import 'package:wave_editor/pages/settings_page.dart';
 import 'package:wave_editor/pages/http_server_page.dart';
 import 'package:wave_editor/logic/logic.dart';
@@ -18,7 +22,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Wave Editor',
+      debugShowCheckedModeBanner: false, // 移除调试标记
+      showSemanticsDebugger: false, // 关闭语义调试
+      showPerformanceOverlay: false,
+      title: '地震波处理工具',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -27,8 +34,12 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       getPages: [
         GetPage(name: '/', page: () => const HomePage()),
-        GetPage(name: '/settings', page: () => SettingsPage()),
-        GetPage(name: '/httpServer', page: () => HttpServerPage()),
+        GetPage(name: '/renameFile', page: () => const FileRenamePage()),
+        GetPage(name: '/scaleFile', page: () => const FileScalePage()),
+        GetPage(name: '/previewWave', page: () => const WaveformPreviewPage()),
+        GetPage(name: '/httpServer', page: () => const HttpServerPage()),
+        GetPage(name: '/settings', page: () => const SettingsPage()),
+        GetPage(name: '/about', page: () => const AboutPage()),
       ],
     );
   }

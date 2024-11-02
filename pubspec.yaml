@@ -1,4 +1,5 @@
 name: wave_editor
+display_name: 地震波处理工具
 description: "A new Flutter project."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
@@ -32,10 +33,10 @@ flutter:
     - assets/icons/
 
 msix_config: # Windows Msix 构建配置 | dart run msix:create
-  display_name: WaveEditor
+  display_name: 地震波处理工具
   publisher_display_name: X
   identity_name: x.fun.waveEditor
-  msix_version: 1.0.0.0
+  msix_version: "2.0.0.0"
   logo_path: C:\Users\hello\StudioProjects\wave_editor\build_depend\logo.png
   capabilities: internetClient
 

@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:get/get.dart';
 import 'package:path/path.dart' as path;
+import 'dart:math' as math;
 import 'package:wave_editor/logic/logic.dart';
+import 'package:intl/intl.dart';
 
 class FileProcessor {
   final String srcFolder;
@@ -9,15 +11,19 @@ class FileProcessor {
   late final List<String> waveDirection; // ['H', 'HH', 'V']
   late final String waveDirectionSeparator; // '-'
   late final bool useIncrementalNaming; // false
-  late final List<String> fileExtension; // ['H', 'HH', 'V']
+  late final List<String> fileExtension; // ['AT2', 'DT2', 'VT2']
   late final List<String> separator; // ['-', '_']
 
-  FileProcessor(this.srcFolder, this.dstFolder) {
+  // 添加计数器映射
+  final Map<String, int> _prefixCounter = {};
+
+  FileProcessor(this.srcFolder, this.dstFolder, {List<String>? fileExtension}) {
     final appController = Get.find<AppController>();
     waveDirection = appController.defaultWaveDirection.toList();
     waveDirectionSeparator = appController.defaultWaveDirectionSeparator.value;
     useIncrementalNaming = appController.useIncrementalNaming.value;
-    fileExtension = appController.defaultFileExtension.toList();
+    this.fileExtension =
+        fileExtension ?? appController.defaultFileExtension.toList();
     separator = appController.defaultSeparator.toList();
   }
 
@@ -25,30 +31,46 @@ class FileProcessor {
     final files = await _getFiles();
     final groups = _groupFiles(files);
 
-    for (var group in groups.values) {
-      final dataFrames = await Future.wait(group.map(_readFile));
+    for (var groupEntry in groups.entries) {
+      final extensionGroups = groupEntry.value;
 
-      final fileData = List<Map<String, dynamic>>.generate(
-          group.length,
+      // 对每种扩展名的文件分别处理
+      for (var ext in fileExtension) {
+        if (!extensionGroups.containsKey(ext)) continue;
+
+        final filesInExtGroup = extensionGroups[ext]!;
+        final dataFrames = await Future.wait(filesInExtGroup.map(_readFile));
+
+        final fileData = List<Map<String, dynamic>>.generate(
+          filesInExtGroup.length,
           (index) => {
-                'file': group[index],
-                'data': dataFrames[index],
-              });
+            'file': filesInExtGroup[index],
+            'data': dataFrames[index],
+          },
+        );
 
-      fileData.sort((a, b) => _getMaxAbsValue(b['data']['data'] as List<double>)
-          .compareTo(_getMaxAbsValue(a['data']['data'] as List<double>)));
+        // 按每组波形方向的数量分组处理
+        final int filesPerGroup = waveDirection.length;
+        for (var i = 0; i < fileData.length; i += filesPerGroup) {
+          final currentGroup =
+              fileData.sublist(i, math.min(i + filesPerGroup, fileData.length));
 
-      final suffixes = waveDirection;
-      for (var i = 0; i < suffixes.length; i++) {
-        if (i < fileData.length) {
-          final file = fileData[i]['file'] as File;
-          final data = fileData[i]['data'] as Map<String, List<double>>;
-          final suffix = suffixes[i];
-          final fileExtension = path.extension(file.path);
-          final newName =
-              '${_getPrefix(file)}$waveDirectionSeparator$suffix$fileExtension';
-          final newPath = path.join(dstFolder, newName);
-          await _saveFile(data, newPath);
+          // 对当前组进行排序
+          currentGroup.sort((a, b) =>
+              _getMaxAbsValue(b['data']['data'] as List<double>).compareTo(
+                  _getMaxAbsValue(a['data']['data'] as List<double>)));
+
+          // 处理排序后的文件
+          for (var j = 0; j < currentGroup.length; j++) {
+            final file = currentGroup[j]['file'] as File;
+            final data = currentGroup[j]['data'] as Map<String, List<double>>;
+            final suffix = waveDirection[j];
+            final originalPrefix = _getPrefix(file);
+            final prefix = _getIncrementalPrefix(originalPrefix);
+            final newName = '$prefix$waveDirectionSeparator$suffix.$ext';
+            final newPath = path.join(dstFolder, newName);
+            await _saveFile(data, newPath);
+          }
         }
       }
     }
@@ -56,39 +78,51 @@ class FileProcessor {
 
   Future<List<File>> _getFiles() async {
     final directory = Directory(srcFolder);
-    final files =
-        directory.listSync(recursive: true).whereType<File>().toList();
+    final files = directory
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => fileExtension.contains(
+            path.extension(file.path).toUpperCase().replaceAll('.', '')))
+        .toList();
     return files;
   }
 
-  Map<String, List<File>> _groupFiles(List<File> files) {
-    final groups = <String, List<File>>{};
+  Map<String, Map<String, List<File>>> _groupFiles(List<File> files) {
+    // 第一层key是文件前缀，第二层key是文件扩展名
+    final groups = <String, Map<String, List<File>>>{};
 
     for (var file in files) {
       final prefix = _getPrefix(file);
+      final ext = path.extension(file.path).toUpperCase().replaceAll('.', '');
 
+      // 初始化前缀组
       if (!groups.containsKey(prefix)) {
-        groups[prefix] = [];
+        groups[prefix] = {};
       }
-      groups[prefix]!.add(file);
+
+      // 初始化扩展名组
+      if (!groups[prefix]!.containsKey(ext)) {
+        groups[prefix]![ext] = [];
+      }
+
+      groups[prefix]![ext]!.add(file);
     }
     return groups;
   }
 
   String _getPrefix(File file) {
-      final fileName = path.basename(file.path);
-      // 遍历所有可能的分隔符
-      for (var sep in separator) {
-        final parts = fileName.split(sep);
-        if (parts.length > 1) {
-          // 如果能够成功分割，返回第一部分作为前缀
-          return parts[0];
+    final fileName = path.basename(file.path);
+    // 遍历所有可能的分隔符
+    for (var sep in separator) {
+      final parts = fileName.split(sep);
+      if (parts.length > 1) {
+        // 如果能够成功分割，返回第一部分作为前缀
+        return parts[0];
       }
     }
 
     throw FormatException(
-          '无法从文件名 "$fileName" 中提取前缀。请检查全局分隔符是否正确: ${separator.join("|")}');
-    }
+        '无法从文件名 "$fileName" 中提取前缀。请检查全局分隔符是否正确: ${separator.join("|")}');
   }
 
   Future<Map<String, List<double>>> _readFile(File file) async {
@@ -112,10 +146,15 @@ class FileProcessor {
   }
 
   Future<void> _saveFile(Map<String, List<double>> data, String path) async {
+    final timeFormat = NumberFormat('0.####'); // 4位小数
+    final dataFormat = NumberFormat('0.######'); // 6位小数
+
     final lines = <String>[];
     lines.add('time,data');
     for (var i = 0; i < data['time']!.length; i++) {
-      lines.add('${data['time']![i]},${data['data']![i]}');
+      final timeStr = timeFormat.format(data['time']![i]);
+      final dataStr = dataFormat.format(data['data']![i]);
+      lines.add('$timeStr,$dataStr');
     }
     await File(path).writeAsString(lines.join('\n'));
   }
@@ -125,5 +164,15 @@ class FileProcessor {
         .reduce(
             (value, element) => value.abs() > element.abs() ? value : element)
         .abs();
+  }
+
+  // 添加获取自增编号的方法
+  String _getIncrementalPrefix(String originalPrefix) {
+    if (!useIncrementalNaming) return originalPrefix;
+
+    if (!_prefixCounter.containsKey(originalPrefix)) {
+      _prefixCounter[originalPrefix] = _prefixCounter.length + 1;
+    }
+    return _prefixCounter[originalPrefix].toString();
   }
 }
