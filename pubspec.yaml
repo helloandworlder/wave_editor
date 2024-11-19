@@ -19,6 +19,7 @@ dependencies:
   flutter_colorpicker:
   shelf:
   cupertino_icons: ^1.0.8
+  smooth_page_indicator:
 
 dev_dependencies:
   flutter_test:

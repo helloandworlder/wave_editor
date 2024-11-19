@@ -13,11 +13,13 @@ class FileProcessor {
   late final bool useIncrementalNaming; // false
   late final List<String> fileExtension; // ['AT2', 'DT2', 'VT2']
   late final List<String> separator; // ['-', '_']
+  final void Function(double)? onProgress;
 
   // 添加计数器映射
   final Map<String, int> _prefixCounter = {};
 
-  FileProcessor(this.srcFolder, this.dstFolder, {List<String>? fileExtension}) {
+  FileProcessor(this.srcFolder, this.dstFolder,
+      {List<String>? fileExtension, this.onProgress}) {
     final appController = Get.find<AppController>();
     waveDirection = appController.defaultWaveDirection.toList();
     waveDirectionSeparator = appController.defaultWaveDirectionSeparator.value;
@@ -31,10 +33,12 @@ class FileProcessor {
     final files = await _getFiles();
     final groups = _groupFiles(files);
 
+    int totalFiles = files.length;
+    int processedFiles = 0;
+
     for (var groupEntry in groups.entries) {
       final extensionGroups = groupEntry.value;
 
-      // 对每种扩展名的文件分别处理
       for (var ext in fileExtension) {
         if (!extensionGroups.containsKey(ext)) continue;
 
@@ -49,7 +53,6 @@ class FileProcessor {
           },
         );
 
-        // 按每组波形方向的数量分组处理
         final int filesPerGroup = waveDirection.length;
         for (var i = 0; i < fileData.length; i += filesPerGroup) {
           final currentGroup =
@@ -60,7 +63,6 @@ class FileProcessor {
               _getMaxAbsValue(b['data']['data'] as List<double>).compareTo(
                   _getMaxAbsValue(a['data']['data'] as List<double>)));
 
-          // 处理排序后的文件
           for (var j = 0; j < currentGroup.length; j++) {
             final file = currentGroup[j]['file'] as File;
             final data = currentGroup[j]['data'] as Map<String, List<double>>;
@@ -70,6 +72,10 @@ class FileProcessor {
             final newName = '$prefix$waveDirectionSeparator$suffix.$ext';
             final newPath = path.join(dstFolder, newName);
             await _saveFile(data, newPath);
+
+            // 更新进度
+            processedFiles++;
+            onProgress?.call(processedFiles / totalFiles);
           }
         }
       }

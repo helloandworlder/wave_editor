@@ -14,7 +14,7 @@ class HttpServerPage extends StatefulWidget {
 
 class HttpServerPageState extends State<HttpServerPage> {
   HttpServer? _server;
-  String _log = '';
+  List<String> _logEntries = [];
   String _ip = '127.0.0.1';
   int _port = 5000;
   String _fileDirectory = '';
@@ -32,7 +32,7 @@ class HttpServerPageState extends State<HttpServerPage> {
     }
 
     if (_server != null) {
-      _log += 'Server is already running.\n';
+      _logEntries.add('Server is already running.');
       setState(() {});
       return;
     }
@@ -43,9 +43,14 @@ class HttpServerPageState extends State<HttpServerPage> {
       final httpRequest =
           request.context['shelf.io.connection_info'] as HttpConnectionInfo?;
       final requesterIp = httpRequest?.remoteAddress.address ?? 'Unknown IP';
-      _log +=
-          'Received request: ${request.url.path} RequesterIP: $requesterIp\n'; // 添加日志记录
-      setState(() {}); // 更新UI以显示日志
+
+      final queryParams = request.url.queryParameters.entries
+          .map((e) => '${e.key}=${e.value}')
+          .join('&');
+
+      _logEntries.add(
+          'Received request: ${request.url.path} RequesterIP: $requesterIp QueryParams: $queryParams');
+      setState(() {});
 
       if (request.url.path == 'getFilesName') {
         return _getFilesName(request);
@@ -60,9 +65,9 @@ class HttpServerPageState extends State<HttpServerPage> {
 
     try {
       _server = await io.serve(handler, InternetAddress(_ip), _port);
-      _log += 'Server running on $_ip:$_port\n';
+      _logEntries.add('Server running on $_ip:$_port');
     } catch (e) {
-      _log += 'Failed to start server: $e\n';
+      _logEntries.add('Failed to start server: $e');
     }
     setState(() {});
   }
@@ -71,9 +76,9 @@ class HttpServerPageState extends State<HttpServerPage> {
     if (_server != null) {
       _server!.close();
       _server = null;
-      _log += 'Server stopped.\n';
+      _logEntries.add('Server stopped.');
     } else {
-      _log += 'No server is running.\n';
+      _logEntries.add('No server is running.');
     }
     setState(() {});
   }
@@ -135,7 +140,7 @@ class HttpServerPageState extends State<HttpServerPage> {
 
   void _clearLog() {
     setState(() {
-      _log = '';
+      _logEntries.clear();
     });
   }
 
@@ -189,22 +194,24 @@ class HttpServerPageState extends State<HttpServerPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            const Center(child: Text('日志:')),
             Expanded(
+              flex:1,
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: SingleChildScrollView(
-                    child: Card(
-                      margin: const EdgeInsets.all(8.0),
-                      elevation: 4.0, // 控制阴影的深度
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0), // 圆角
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(_log),
+                  child: Card(
+                    margin: const EdgeInsets.all(8.0),
+                    elevation: 4.0, // 控制阴影的深度
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0), // 圆角
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: ListView.builder(
+                        itemCount: _logEntries.length,
+                        itemBuilder: (context, index) {
+                          return Text(_logEntries[index]);
+                        },
                       ),
                     ),
                   ),

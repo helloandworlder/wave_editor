@@ -18,6 +18,7 @@ class FileScalePageState extends State<FileScalePage> {
   final RxList<String> _selectedWaveName = <String>[].obs;
   final TextEditingController _targetValueController = TextEditingController();
   final RxSet<String> _targetFileSuffix = <String>{}.obs;
+  final RxDouble _progress = 0.0.obs;   
 
   @override
   void initState() {
@@ -39,8 +40,7 @@ class FileScalePageState extends State<FileScalePage> {
     }
   }
 
-  void _processFileScale() {
-    // 检查输入输出目录是否为空
+  void _processFileScale() async {
     if (appController.scaleInputFolder.isEmpty) {
       Get.snackbar('错误', '输入目录不能为空');
       return;
@@ -64,14 +64,26 @@ class FileScalePageState extends State<FileScalePage> {
           _selectedWaveName.isNotEmpty ? _selectedWaveName.toList() : [];
       List<String> suffixes = _targetFileSuffix.toList();
 
-      FileScaler fileScaler = FileScaler();
-      fileScaler.processFileScale(
+      FileScaler fileScaler = FileScaler(
+        onProgress: (progress) async {
+          _progress.value = progress;
+          debugPrint('progress: ${_progress.value}');
+        },
+      );
+      final startTime = DateTime.now();
+
+      await fileScaler.processFileScale(
         appController.scaleInputFolder.value,
         appController.scaleOutputFolder.value,
         targetValue,
         suffixes,
         prefix,
       );
+
+      final endTime = DateTime.now();
+      final duration = endTime.difference(startTime);
+      debugPrint('处理消耗时间: ${duration.inMilliseconds} 毫秒');
+      Get.snackbar('调幅完成', '处理消耗时间: ${duration.inMilliseconds} 毫秒');
     } catch (e) {
       Get.snackbar('调幅错误', e.toString());
     }
@@ -134,6 +146,11 @@ class FileScalePageState extends State<FileScalePage> {
                     );
                   }).toList(),
                 )),
+            const SizedBox(height: 16),
+            Obx(() {
+              debugPrint('Obx rebuild: progress = ${_progress.value}');
+              return LinearProgressIndicator(value: _progress.value);
+            }),
             const SizedBox(height: 16),
             Center(
               child: ElevatedButton(

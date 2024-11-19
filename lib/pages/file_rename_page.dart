@@ -13,6 +13,7 @@ class FileRenamePage extends StatefulWidget {
 class FileRenamePageState extends State<FileRenamePage> {
   final AppController appController = Get.find();
   List<String> targetFileSuffix = <String>[];
+  final RxDouble _progress = 0.0.obs;
 
   @override
   void initState() {
@@ -96,33 +97,45 @@ class FileRenamePageState extends State<FileRenamePage> {
                 ),
               ),
               const SizedBox(height: 16),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    // 检查输入输出目录是否为空
-                    if (appController.renameInputFolder.isEmpty) {
-                      Get.snackbar('错误', '输入目录不能为空');
-                      return;
-                    } else if (appController.renameOutputFolder.isEmpty) {
-                      Get.snackbar('错误', '输出目录不能为空');
-                      return;
-                    } else if (targetFileSuffix.isEmpty) {
-                      Get.snackbar('错误', '文件后缀不能为空');
-                      return;
-                    }
-                    // 捕获异常
-                    try {
-                      FileProcessor(
-                        appController.renameInputFolder.value,
-                        appController.renameOutputFolder.value,
-                        fileExtension: targetFileSuffix,
-                      ).process();
-                    } catch (e) {
-                      Get.snackbar('重命名/格式化错误', e.toString());
-                    }
-                  },
-                  child: const Text('开始格式化'),
-                ),
+              Column(
+                children: [
+                  Obx(() => LinearProgressIndicator(value: _progress.value)),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () async {
+                      _progress.value = 0.0;  
+                      // 检查输入输出目录是否为空
+                      if (appController.renameInputFolder.isEmpty) {
+                        Get.snackbar('错误', '输入目录不能为空');
+                        return;
+                      } else if (appController.renameOutputFolder.isEmpty) {
+                        Get.snackbar('错误', '输出目录不能为空');
+                        return;
+                      } else if (targetFileSuffix.isEmpty) {
+                        Get.snackbar('错误', '文件后缀不能为空');
+                        return;
+                      }
+                      // 捕获异常
+                      try {
+                        final startTime = DateTime.now(); // 开始时间
+                        await FileProcessor(
+                          appController.renameInputFolder.value,
+                          appController.renameOutputFolder.value,
+                          fileExtension: targetFileSuffix,
+                          onProgress: (progress) {
+                            _progress.value = progress;
+                          },
+                        ).process();
+                        final endTime = DateTime.now(); // 结束时间
+                        final duration = endTime.difference(startTime); // 计算耗时
+                        Get.snackbar('完成', '处理消耗时间: ${duration.inMilliseconds} 毫秒');
+                      } catch (e) {
+                        Get.snackbar('重命名/格式化错误', e.toString());
+                      }
+                    },
+                    child: const Text('开始格式化'),
+                  ),
+                ],
               )
             ],
           ),
